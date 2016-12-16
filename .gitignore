@@ -1,0 +1,8 @@
+/Makefile
+/coroutine.make
+/.vs/
+/*.VC.*
+/*.vcxproj*
+/coroutine.sln
+/bin/
+/obj/
