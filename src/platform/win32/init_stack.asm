@@ -40,6 +40,7 @@ coroutine_private_init_stack PROC public
 	push ebx
 	push edi
 	push esi
+	mov ecx, esp
 
 	; Acquire arguments
 	mov ebx, dword ptr [ebp+8]
@@ -64,10 +65,10 @@ coroutine_private_init_stack PROC public
 	mov dword ptr [ebx], esp
 
 	; Restore registers and stack
+	mov esp, ecx
 	pop esi
 	pop edi
 	pop ebx
-	mov esp, ebp
 	pop ebp
 
 	ret

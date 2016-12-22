@@ -57,7 +57,6 @@ coroutine_private_switch PROC public FRAME
 	pop rbp
 	pop rbx
 
-	mov rcx, rdx
 	ret
 
 coroutine_private_switch ENDP

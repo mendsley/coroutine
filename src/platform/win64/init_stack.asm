@@ -35,69 +35,67 @@ coroutine_private_init_stack PROC public FRAME
 	.endprolog
 
 	; Save stack pointer and switch to the new coroutine's stack
+	push rbx
+	push rdi
+	push rsi
 	mov r9, rsp
+
 	mov rsp, qword ptr [rcx]
 
 	; Win64 ABI unwind boundary
 	push 0
 
-	; Additional Shadow space for Win64 ABI (32 + locals) + alignment
-	sub rsp, 24
-
-	; Local variables to coroutine_private_entry
-	push rdx
-	push r8
-
-	; Return address
-	lea rax, coroutine_private_entry
+	; ABI boundary address
+	lea rax, coroutine_private_bootstrap
 	push rax
 
-	; Seed the volatile register set
-	sub rsp, 64
+	; Seed volatile registers
+	mov rbx, rcx
+	mov rdi, rdx
+	mov rsi, r8
+	push rbx
+	push 0		; ebp
+	push rdi
+	push rsi
+	push 0		; r12
+	push 0		; r13W
+	push 0		; r14
+	push 0		; r15
 
-	; Save new stack pointer and restore callers stack
+	; Save new stack pointer
 	mov qword ptr [rcx], rsp
+
+	; Restore caller stack
 	mov rsp, r9
+	pop rsi
+	pop rdi
+	pop rbx
 	ret
 
 coroutine_private_init_stack ENDP
 
 
+EXTERN coroutine_private_entry : PROC
+
 ;
 ; Entry point for a coroutine
 ;
-coroutine_private_entry PROC FRAME
-	; rdx: arg, r8: entry, rcx: coro
-	; rbx: coro
+coroutine_private_bootstrap PROC public FRAME
+	; rbx: coro, rdi: arg, rsi: entry
+
+	; Shadow space + alignment: Win64 ABI
+	sub rsp, 40
 	.allocstack 40
 	.endprolog
 
-	; Restore local arguments (Keep shadow space)
-	mov rdx, qword ptr [rsp]
-	mov r8, qword ptr [rsp + 8]
-
-	; coro->ctx_status = CORO_RUNNING
-	mov qword ptr [rax+8], 1
-
-	; Save coro across call boundary
-	mov rbx, rcx
-
-	; call into user entry point
-	call r8
-
-	; coroutine has terminated. return to coroutine at <rax>
-
-	; Remove space for locals
-	add rsp, 40
-
-	; coro->ctx_status = CORO_FINISHED
-	mov qword ptr [rbx+8], 2
-
-	; coroutine_private_switch(coro, return)
+	; Setup argumetns to entry point
 	mov rcx, rbx
-	mov rdx, rax
-	jmp coroutine_private_switch
+	mov rdx, rdi
+	mov r8, rsi
 
-coroutine_private_entry ENDP
+	call coroutine_private_entry
+	; does not retrun
+
+coroutine_private_bootstrap ENDP
 
 END

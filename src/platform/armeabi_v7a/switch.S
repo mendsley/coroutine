@@ -40,11 +40,6 @@ coroutine_private_switch:
 	vpush {s16-s31}
 	.pad #64
 
-	@teq r2, #6
-	@bne next
-	@bkpt
-	@next:
-
 	@ from->stack = <stack>
 	str sp, [r0]
 

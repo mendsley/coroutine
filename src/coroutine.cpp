@@ -45,7 +45,7 @@ extern "C"
 	void coroutine_private_init_stack(coroutine::H* coro, coroutine::Entry* entry, void* arg);
 
 	// Handle the switching of coroutines
-	void coroutine_private_switch(coroutine::H* from, coroutine::H* to, int count);
+	void coroutine_private_switch(coroutine::H* from, coroutine::H* to);
 }
 
 using namespace coroutine;
@@ -85,14 +85,11 @@ extern "C" void coroutine_private_entry(coroutine::H* coro, coroutine::Entry* en
 	switchTo(coro, next);
 }
 
-void dbgPrintf(const char*, ...);
-
 
 H* coroutine::convertToCoroutine()
 {
 	H* coro = static_cast<H*>(aligned_malloc(16, sizeof(H)));
 	coro->status = CORO_RUNNING;
-	dbgPrintf("Convert to coro %p\n", coro);
 	return coro;
 }
 
@@ -121,7 +118,6 @@ H* coroutine::create(Entry* entry, void* arg, size_t stackSize)
 	coro->stack = static_cast<char*>(coro->raw_stack) + stackSize;
 
 	coroutine_private_init_stack(coro, entry, arg);
-	dbgPrintf("Created %p s[%p] %d\n", coro, coro->stack, (uintptr_t)coro->stack - (uintptr_t)coro->raw_stack);
 	return coro;
 }
 
@@ -136,26 +132,10 @@ void coroutine::destroy(H* h)
 	aligned_free(16, h);
 }
 
-#ifdef _WIN32
-#include <Windows.h>
-static unsigned thread_id() { return GetCurrentThreadId(); }
-#else
-#include <pthread.h>
-static unsigned thread_id() { return pthread_self(); }
-#endif
 void coroutine::switchTo(H* from, H* to)
 {
-	static int count = 0;
-	++count;
 	if (to != from)
 	{
-		auto id = thread_id();
-		dbgPrintf("[%u] Switch %d\n", id, count);
-		dbgPrintf("[%u] Switching from %p s[%p] %d\n", id, from, from->stack, (uintptr_t)from->stack - (uintptr_t)from->raw_stack);
-		dbgPrintf("[%u] Switching to %p s[%p] %d\n", id, to, to->stack, (uintptr_t)to->stack - (uintptr_t)to->raw_stack);
-		dbgPrintf("[%u] Entry: %p\n", id, coroutine_private_entry);
-		void* oldFrom = from->stack;
-		coroutine_private_switch(from, to, count);
-		dbgPrintf("[%u] Switched out %p s[%p -> %p] %d\n", id, from, oldFrom, from->stack, (intptr_t)oldFrom - (intptr_t)from->stack);
+		coroutine_private_switch(from, to);
 	}
 }
