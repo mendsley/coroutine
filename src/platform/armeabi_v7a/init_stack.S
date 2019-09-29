@@ -28,15 +28,6 @@
 
 
 @
-@ int coroutine_private_context_size();
-@
-.global coroutine_private_context_size
-coroutine_private_context_size:
-	@ We only need 108 bytes, but this must be 16-byte aligned
-	mov r0, #112
-	bx lr
-
-@
 @ void coroutine_private_init_stack(coroutine::H* coro, coroutine::Entry* entry, void* arg);
 @
 .global coroutine_private_init_stack
