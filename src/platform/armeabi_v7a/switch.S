@@ -38,6 +38,7 @@ coroutine_private_switch:
 	push {r4-r12, lr}
 	.save {r4-r12, lr}
 	vpush {s16-s31}
+	.vsave {s16-s31}
 	.pad #64
 
 	@ from->stack = <stack>
